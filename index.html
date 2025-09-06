@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cálculo de Intereses - Abogados</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- SheetJS para exportar a Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root { --border:#d0d0d0; --ink:#111; --muted:#f4f4f4; --head:#cfe7c3; }
+    *{ box-sizing:border-box }
+    html,body{ height:100% }
+    body{
+      margin:0; font-family:Arial,Helvetica,sans-serif; color:var(--ink);
+      display:flex; height:100vh; overflow:hidden; background:#fafafa;
+    }
+
+    /* Layout dos columnas (como el original) */
+    .left{
+      width:35%; min-width:340px; max-width:60%;
+      border-right:1px solid var(--border);
+      display:flex; flex-direction:column; background:#fff; overflow:hidden;
+    }
+    .left-header{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:8px 10px; border-bottom:1px solid var(--border); background:#fff;
+    }
+    .left iframe{ flex:1 1 auto; width:100%; height:100%; border:0; }
+
+    .right{
+      flex:1 1 auto; display:flex; flex-direction:column; overflow:hidden;
+      padding:10px; gap:8px;
+    }
+    .panel{ background:#fff; border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+    .panel-body{ padding:10px; }
+
+    .toolbar{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+    .toolbar button{
+      padding:8px 12px; border:1px solid #bbb; background:#fff; border-radius:4px; cursor:pointer;
+    }
+    .toolbar button:hover{ background:#f7f7f7; }
+
+    .encabezado{
+      border:1px solid var(--border); background:#fff; padding:8px; margin-bottom:8px;
+    }
+    .encabezado[contenteditable="true"]:focus{ outline:2px solid #b7e1a1; }
+
+    /* Tabla */
+    .table-wrap{ flex:1 1 auto; overflow:auto; }
+    table{ width:100%; border-collapse:collapse; table-layout:auto; background:#fff; }
+    th,td{ border:1px solid #333; padding:8px; text-align:center; }
+    thead th{ background:#e9e9e9; }
+    .title-row td{ background:var(--head); font-weight:bold; }
+    tfoot td{ background:var(--muted); font-weight:bold; }
+    td[contenteditable="true"]{ background:#fffffb; }
+    .num{ text-align:right }
+
+    @media (max-width: 980px){
+      .left{ width:40%; min-width:280px; }
+    }
+
+    /* Impresión: imprime solo encabezado + tabla (derecha) */
+    @media print{
+      body{ overflow:visible; display:block; background:#fff }
+      .left, .toolbar, .left-header{ display:none !important }
+      .right{ padding:0 }
+      .panel{ border:none }
+    }
+  </style>
+</head>
+<body>
+  <!-- IZQUIERDA: página oficial -->
+  <aside class="left" id="col-izq">
+    <div class="left-header">
+      <strong>Página oficial</strong>
+      <div>
+        <button onclick="recargarIframe()">Recargar</button>
+        <button onclick="toggleIzquierda()">Ocultar</button>
+      </div>
+    </div>
+    <iframe id="oficial" src="https://consejo.jusbaires.gob.ar/servicios/calculo-de-interes/" title="Cálculo de interés"></iframe>
+  </aside>
+
+  <!-- DERECHA: planilla -->
+  <main class="right">
+    <div class="panel">
+      <div class="panel-body">
+        <h2 style="margin:0 0 8px 0;">Planilla de Cálculo</h2>
+
+        <div class="encabezado" id="encabezado" contenteditable="true">
+          <div><b>Demanda por Cuota Alimentaria</b> - Expediente N° 12345/2025</div>
+          <div>Actor: NN &nbsp;|&nbsp; Demandado: MMM</div>
+          <div>Representante Legal: Dr. QQQQQ - Abogado Matrícula N° 0000</div>
+          <div><b>Planilla de Gastos Extras</b></div>
+        </div>
+
+        <div class="toolbar">
+          <button onclick="agregarFila()">Agregar fila</button>
+          <button onclick="recalcular()">Calcular</button>
+          <button onclick="exportarExcel()">Exportar a Excel</button>
+          <button onclick="imprimirPlanilla()">Imprimir</button>
+          <button onclick="toggleIzquierda()">Mostrar/Ocultar página oficial</button>
+        </div>
+
+        <div class="table-wrap">
+          <table id="tabla">
+            <thead>
+              <tr class="title-row"><td colspan="9">Planilla de Gastos Extras</td></tr>
+              <tr>
+                <th>Orden</th>
+                <th>Negocio</th>
+                <th>Concepto</th>
+                <th>Fecha Gasto (dd/mm/aaaa)</th>
+                <th>Fecha Actual (dd/mm/aaaa)</th>
+                <th>Días Transcurridos</th>
+                <th>Monto</th>
+                <th>Interés</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="tbody">
+              <tr>
+                <td contenteditable="true">1</td>
+                <td contenteditable="true">Librería del Norte</td>
+                <td contenteditable="true">Carpetas</td>
+                <td contenteditable="true">02/02/2025</td>
+                <td contenteditable="true"></td>
+                <td></td>
+                <td contenteditable="true" class="num">20000</td>
+                <td contenteditable="true" class="num">20</td>
+                <td class="num"></td>
+              </tr>
+              <tr>
+                <td contenteditable="true">2</td>
+                <td contenteditable="true">Siux</td>
+                <td contenteditable="true">Uniformes</td>
+                <td contenteditable="true">05/05/2025</td>
+                <td contenteditable="true"></td>
+                <td></td>
+                <td contenteditable="true" class="num">5781</td>
+                <td contenteditable="true" class="num">15</td>
+                <td class="num"></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="6" style="text-align:right">Totales:</td>
+                <td id="totalMonto" class="num">0</td>
+                <td id="totalInteres" class="num">0</td>
+                <td id="totalGeneral" class="num">0</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    /* ---------- utilidades ---------- */
+    function toNumber(v){
+      if (typeof v !== 'string') v = String(v == null ? '' : v);
+      v = v.replace(/\./g, '').replace(/,/g, '.').replace(/[^\d.-]/g, '');
+      var n = parseFloat(v);
+      return isNaN(n) ? 0 : n;
+    }
+    function parseDMY(s){
+      if(!s) return null;
+      var m = String(s).trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if(!m) return null;
+      var d=+m[1], mo=+m[2], y=+m[3];
+      var dt=new Date(y, mo-1, d);
+      return (dt.getFullYear()===y && dt.getMonth()===mo-1 && dt.getDate()===d) ? dt : null;
+    }
+    function difDias(a,b){ return Math.max(0, Math.floor((b-a)/(1000*60*60*24))); }
+    function hoyDMY(){
+      var t=new Date(); var dd=('0'+t.getDate()).slice(-2);
+      var mm=('0'+(t.getMonth()+1)).slice(-2); var yy=t.getFullYear();
+      return dd + '/' + mm + '/' + yy;
+    }
+
+    /* ---------- interacción ---------- */
+    var tbody = document.getElementById('tbody');
+    var tabla = document.getElementById('tabla');
+
+    function agregarFila(){
+      var r = tbody.insertRow();
+      for(var i=0;i<9;i++) r.insertCell();
+      r.cells[0].contentEditable='true';
+      r.cells[1].contentEditable='true';
+      r.cells[2].contentEditable='true';
+      r.cells[3].contentEditable='true';
+      r.cells[4].contentEditable='true';
+      r.cells[6].contentEditable='true';
+      r.cells[7].contentEditable='true';
+      r.cells[6].classList.add('num'); r.cells[7].classList.add('num');
+      r.cells[0].innerText = tbody.rows.length;
+      r.cells[4].innerText = hoyDMY();
+    }
+
+    function recalcular(){
+      var sumaMonto=0, sumaInteres=0, sumaTotal=0;
+
+      Array.prototype.forEach.call(tbody.rows, function(tr){
+        var fG = parseDMY(tr.cells[3].innerText);
+        if(!tr.cells[4].innerText.trim()) tr.cells[4].innerText = hoyDMY();
+        var fA = parseDMY(tr.cells[4].innerText) || new Date();
+        tr.cells[5].innerText = fG ? difDias(fG, fA) : 0;
+
+        var monto = toNumber(tr.cells[6].innerText);
+        var interes = toNumber(tr.cells[7].innerText);
+        var total = monto + interes;
+        tr.cells[8].innerText = total ? total.toFixed(2) : '';
+
+        sumaMonto += monto; sumaInteres += interes; sumaTotal += total;
+      });
+
+      document.getElementById('totalMonto').innerText = sumaMonto.toFixed(2);
+      document.getElementById('totalInteres').innerText = sumaInteres.toFixed(2);
+      document.getElementById('totalGeneral').innerText = sumaTotal.toFixed(2);
+    }
+
+    tabla.addEventListener('input', recalcular);
+
+    function exportarExcel(){
+      // Construye tabla temporal con encabezado + tabla
+      var temp = document.createElement('table');
+
+      var encabezadoTexto = document.getElementById('encabezado').innerText.split('\n');
+      encabezadoTexto.forEach(function(line){
+        var tr = temp.insertRow();
+        var td = tr.insertCell();
+        td.colSpan = 9;
+        td.innerText = line;
+        td.style.fontWeight = 'bold';
+      });
+
+      temp.insertRow().insertCell().colSpan = 9; // espacio
+      temp.appendChild(tabla.cloneNode(true));
+
+      var wb = XLSX.utils.table_to_book(temp, {sheet:'Planilla'});
+      XLSX.writeFile(wb, 'planilla_calculo.xlsx');
+    }
+
+    function imprimirPlanilla(){
+      // Usa la hoja de estilo @media print; imprime la vista derecha
+      window.print();
+    }
+
+    function toggleIzquierda(){
+      var izq = document.getElementById('col-izq');
+      izq.style.display = (izq.style.display==='none') ? 'flex' : 'none';
+    }
+    function recargarIframe(){
+      var f = document.getElementById('oficial');
+      f.src = f.src;
+    }
+
+    // Inicial: fecha actual por defecto y cálculo
+    Array.prototype.forEach.call(tbody.rows, function(tr){
+      if(!tr.cells[4].innerText.trim()) tr.cells[4].innerText=hoyDMY();
+    });
+    recalcular();
+  </script>
+</body>
+</html>
