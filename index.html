@@ -100,6 +100,8 @@
           <button onclick="exportarExcel()">Exportar a Excel</button>
           <button onclick="imprimirPlanilla()">Imprimir</button>
           <button onclick="toggleIzquierda()">Mostrar/Ocultar página oficial</button>
+          <!-- NUEVO: botón borrar todo -->
+          <button onclick="borrarTodo()" style="border-color:#e57373">Borrar todo</button>
         </div>
 
         <div class="table-wrap">
@@ -119,28 +121,7 @@
               </tr>
             </thead>
             <tbody id="tbody">
-              <tr>
-                <td contenteditable="true">1</td>
-                <td contenteditable="true">Librería del Norte</td>
-                <td contenteditable="true">Carpetas</td>
-                <td contenteditable="true">02/02/2025</td>
-                <td contenteditable="true"></td>
-                <td></td>
-                <td contenteditable="true" class="num">20000</td>
-                <td contenteditable="true" class="num">20</td>
-                <td class="num"></td>
-              </tr>
-              <tr>
-                <td contenteditable="true">2</td>
-                <td contenteditable="true">Siux</td>
-                <td contenteditable="true">Uniformes</td>
-                <td contenteditable="true">05/05/2025</td>
-                <td contenteditable="true"></td>
-                <td></td>
-                <td contenteditable="true" class="num">5781</td>
-                <td contenteditable="true" class="num">15</td>
-                <td class="num"></td>
-              </tr>
+              <!-- Quedará vacío al cargar (se crea una fila en blanco automáticamente) -->
             </tbody>
             <tfoot>
               <tr>
@@ -256,11 +237,36 @@
       f.src = f.src;
     }
 
-    // Inicial: fecha actual por defecto y cálculo
-    Array.prototype.forEach.call(tbody.rows, function(tr){
-      if(!tr.cells[4].innerText.trim()) tr.cells[4].innerText=hoyDMY();
+    /* ---------- NUEVO: borrar todo y dejar limpio ---------- */
+    function borrarTodo(sinConfirmacion){
+      if (!sinConfirmacion) {
+        var ok = confirm('Esto borrará todas las filas y totales. ¿Continuar?');
+        if (!ok) return;
+      }
+      // Vaciar cuerpo de tabla
+      tbody.innerHTML = '';
+      // Reiniciar totales
+      document.getElementById('totalMonto').innerText = '0';
+      document.getElementById('totalInteres').innerText = '0';
+      document.getElementById('totalGeneral').innerText = '0';
+      // Dejar una fila en blanco lista para cargar
+      agregarFila();
+      // Limpiar celdas de esa fila (menos Orden y Fecha Actual)
+      var r0 = tbody.rows[0];
+      r0.cells[1].innerText = '';
+      r0.cells[2].innerText = '';
+      r0.cells[3].innerText = '';
+      r0.cells[5].innerText = '';
+      r0.cells[6].innerText = '';
+      r0.cells[7].innerText = '';
+      r0.cells[8].innerText = '';
+    }
+
+    // Inicial: SIEMPRE limpio al cargar (sin preguntar) y con una fila vacía
+    window.addEventListener('DOMContentLoaded', function(){
+      borrarTodo(true);   // limpia todo y crea una fila vacía
+      recalcular();
     });
-    recalcular();
   </script>
 </body>
 </html>
